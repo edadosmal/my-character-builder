@@ -2143,9 +2143,9 @@ function CharacterBuilder() {
         pointerEvents: 'none',
         zIndex: 0
       }}></div>
-      <div className="max-w-5xl mx-auto px-1 sm:px-2" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="flex justify-center mb-3 sm:mb-4 relative">
-          <img src="/logo.png" alt="FS:R Builder" className="w-[100px] h-[100px] sm:w-[150px] sm:h-[150px]" />
+      <div className="max-w-6xl mx-auto px-2 sm:px-4" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="flex justify-center mb-2 sm:mb-4 relative">
+          <img src="/logo.png" alt="FS:R Builder" className="w-[80px] h-[80px] sm:w-[120px] sm:h-[120px]" />
           {/* Language Selector */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex gap-1">
             <button
@@ -2300,14 +2300,14 @@ function CharacterBuilder() {
             <div className="bg-gray-800 bg-opacity-80 rounded-lg p-2 sm:p-3 mb-2 sm:mb-3" style={borderStyle}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div>
-              <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.race}</label>
+              <label className="block text-xs sm:text-sm font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.race}</label>
               <select
                 value={selectedRace.name}
                 onChange={(e) => {
                   setSelectedRace(sampleRaces.find(r => r.name === e.target.value));
                   setActiveForms([]);
                 }}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-2 text-sm font-black transition-all duration-300"
+                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2.5 text-sm sm:text-base font-black transition-all duration-300"
                 style={{ 
                   textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                   background: `
@@ -2337,14 +2337,14 @@ function CharacterBuilder() {
 
             {selectedRace.name === 'Alien' && (
               <div>
-                <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.alienSubrace}</label>
+                <label className="block text-xs sm:text-sm font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.alienSubrace}</label>
                 <select
                   value={selectedAlienSubrace}
                   onChange={(e) => {
                     setSelectedAlienSubrace(e.target.value);
                     setActiveForms([]);
                   }}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm font-black transition-all duration-300"
+                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2.5 text-sm sm:text-base font-black transition-all duration-300"
                   style={{ 
                     textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                     background: `
@@ -2374,7 +2374,7 @@ function CharacterBuilder() {
             )}
 
             <div>
-              <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.levelRange}</label>
+              <label className="block text-xs sm:text-sm font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.levelRange}</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -2387,7 +2387,7 @@ function CharacterBuilder() {
                     }
                   }}
                   placeholder="0"
-                  className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-center font-bold text-xs focus:border-blue-500 focus:outline-none transition-all duration-300"
+                  className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-center font-bold text-sm sm:text-base focus:border-blue-500 focus:outline-none transition-all duration-300"
                   style={{ 
                     background: `
                       linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
@@ -2410,7 +2410,7 @@ function CharacterBuilder() {
                 />
                 <button
                   onClick={() => setLevel(305)}
-                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 rounded text-xs font-black transition-colors"
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded text-sm font-black transition-colors"
                   style={{ textShadow: '1px 1px 0 #000' }}
                 >
                   {t.max}
@@ -2570,9 +2570,9 @@ function CharacterBuilder() {
                 }
               `}</style>
               <div 
-                className="forms-scroll-container space-y-2 overflow-y-scroll pr-2" 
+                className="forms-scroll-container space-y-2 overflow-y-auto pr-2" 
                 style={{ 
-                  maxHeight: '260px',
+                  maxHeight: '320px',
                   scrollbarWidth: 'auto',
                   scrollbarColor: '#e5e7eb #1f2937'
                 }}
