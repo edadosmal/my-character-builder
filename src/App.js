@@ -2144,13 +2144,13 @@ function CharacterBuilder() {
         zIndex: 0
       }}></div>
       <div className="max-w-6xl mx-auto px-2 sm:px-4" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="flex justify-center mb-2 sm:mb-4 relative">
-          <img src="/logo.png" alt="FS:R Builder" className="w-[80px] h-[80px] sm:w-[120px] sm:h-[120px]" />
+        <div className="flex justify-center mb-1 sm:mb-2 relative">
+          <img src="/logo.png" alt="FS:R Builder" className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px]" />
           {/* Language Selector */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex gap-1">
             <button
               onClick={() => setLanguage('en')}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded text-lg sm:text-xl transition-colors flex items-center justify-center ${language === 'en' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-base sm:text-lg transition-colors flex items-center justify-center ${language === 'en' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'en' 
@@ -2163,7 +2163,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setLanguage('es')}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded text-lg sm:text-xl transition-colors flex items-center justify-center ${language === 'es' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-base sm:text-lg transition-colors flex items-center justify-center ${language === 'es' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'es' 
@@ -2176,7 +2176,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setLanguage('pt')}
-              className={`w-8 h-8 sm:w-9 sm:h-9 rounded text-lg sm:text-xl transition-colors flex items-center justify-center ${language === 'pt' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-base sm:text-lg transition-colors flex items-center justify-center ${language === 'pt' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'pt' 
@@ -2190,7 +2190,7 @@ function CharacterBuilder() {
           </div>
         </div>
 
-        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-1.5 sm:p-2 mb-3 sm:mb-4" style={borderStyle}>
+        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-1 sm:p-1.5 mb-2 sm:mb-3" style={borderStyle}>
           <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
             <button
               onClick={() => setCurrentPage('builder')}
