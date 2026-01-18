@@ -2061,10 +2061,11 @@ function CharacterBuilder() {
       backgroundSize: 'cover', 
       backgroundPosition: 'center center', 
       backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'fixed',
+      backgroundAttachment: 'scroll',
       position: 'relative',
       backgroundColor: 'linear-gradient(135deg, #166534 50%, #22c55e 50%)',
-      padding: '1rem'
+      padding: '0.5rem',
+      paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)'
     }}>
       <div style={{
         position: 'absolute',
@@ -2090,14 +2091,14 @@ function CharacterBuilder() {
         pointerEvents: 'none',
         zIndex: 0
       }}></div>
-      <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="flex justify-center mb-4 relative">
-          <img src="/logo.png" alt="FS:R Builder" className="w-[150px] h-[150px]" />
+      <div className="max-w-5xl mx-auto px-1 sm:px-2" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="flex justify-center mb-3 sm:mb-4 relative">
+          <img src="/logo.png" alt="FS:R Builder" className="w-[100px] h-[100px] sm:w-[150px] sm:h-[150px]" />
           {/* Language Selector */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex gap-1">
             <button
               onClick={() => setLanguage('en')}
-              className={`w-9 h-9 rounded text-xl transition-colors flex items-center justify-center ${language === 'en' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded text-lg sm:text-xl transition-colors flex items-center justify-center ${language === 'en' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'en' 
@@ -2110,7 +2111,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setLanguage('es')}
-              className={`w-9 h-9 rounded text-xl transition-colors flex items-center justify-center ${language === 'es' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded text-lg sm:text-xl transition-colors flex items-center justify-center ${language === 'es' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'es' 
@@ -2123,7 +2124,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setLanguage('pt')}
-              className={`w-9 h-9 rounded text-xl transition-colors flex items-center justify-center ${language === 'pt' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-8 h-8 sm:w-9 sm:h-9 rounded text-lg sm:text-xl transition-colors flex items-center justify-center ${language === 'pt' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'pt' 
@@ -2137,11 +2138,11 @@ function CharacterBuilder() {
           </div>
         </div>
 
-        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-2 mb-4" style={borderStyle}>
-          <div className="flex gap-2 justify-center">
+        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-1.5 sm:p-2 mb-3 sm:mb-4" style={borderStyle}>
+          <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
             <button
               onClick={() => setCurrentPage('builder')}
-              className={`px-6 py-2 rounded font-black text-sm transition-colors ${
+              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
                 currentPage === 'builder'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2166,7 +2167,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setCurrentPage('movekit')}
-              className={`px-6 py-2 rounded font-black text-sm transition-colors ${
+              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
                 currentPage === 'movekit'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2191,7 +2192,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setCurrentPage('capsules')}
-              className={`px-6 py-2 rounded font-black text-sm transition-colors ${
+              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
                 currentPage === 'capsules'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2216,7 +2217,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setCurrentPage('about')}
-              className={`px-6 py-2 rounded font-black text-sm transition-colors ${
+              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
                 currentPage === 'about'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2244,8 +2245,8 @@ function CharacterBuilder() {
 
         {currentPage === 'builder' && (
           <>
-            <div className="bg-gray-800 bg-opacity-80 rounded-lg p-3 mb-3" style={borderStyle}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="bg-gray-800 bg-opacity-80 rounded-lg p-2 sm:p-3 mb-2 sm:mb-3" style={borderStyle}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             <div>
               <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.race}</label>
               <select
@@ -2254,7 +2255,7 @@ function CharacterBuilder() {
                   setSelectedRace(sampleRaces.find(r => r.name === e.target.value));
                   setActiveForms([]);
                 }}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm font-black transition-all duration-300"
+                className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-2 text-sm font-black transition-all duration-300"
                 style={{ 
                   textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                   background: `
@@ -2404,7 +2405,7 @@ function CharacterBuilder() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3">
           <div>
             <Section title={t.extraPoints} id="stats">
               <div className="rounded p-1.5 mb-2" style={{ 
@@ -2996,10 +2997,10 @@ function CharacterBuilder() {
         )}
 
         {currentPage === 'movekit' && (
-          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6" style={borderStyle}>
-            <h2 className="text-2xl font-black mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectMoves}</h2>
+          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-3 sm:p-6" style={borderStyle}>
+            <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectMoves}</h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((slotIndex) => {
                 // Filter moves based on search and race access
                 const filteredMoves = sampleMoves.filter(move => {
@@ -3031,7 +3032,7 @@ function CharacterBuilder() {
                 <div key={slotIndex} className="relative">
                   <button
                     onClick={() => setOpenMoveSlot(isOpen ? null : slotIndex)}
-                    className="w-full h-16 rounded-lg p-2 font-black text-xs cursor-pointer flex items-center justify-center text-center"
+                    className="w-full h-14 sm:h-16 rounded-lg p-1.5 sm:p-2 font-black text-[10px] sm:text-xs cursor-pointer flex items-center justify-center text-center leading-tight"
                     style={{
                       ...smallBorderStyle,
                       background: selectedMoves[slotIndex] 
@@ -3045,8 +3046,14 @@ function CharacterBuilder() {
                   </button>
                   
                   {isOpen && (
+                    <>
+                    {/* Mobile backdrop */}
                     <div 
-                      className="absolute top-full left-0 w-56 mt-1 rounded-lg z-50 max-h-72 overflow-hidden flex flex-col"
+                      className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+                      onClick={() => setOpenMoveSlot(null)}
+                    />
+                    <div 
+                      className="fixed sm:absolute inset-x-2 sm:inset-x-auto top-1/4 sm:top-full left-auto sm:left-0 w-auto sm:w-56 mt-0 sm:mt-1 rounded-lg z-50 max-h-[60vh] sm:max-h-72 overflow-hidden flex flex-col"
                       style={{
                         ...borderStyle,
                         background: 'linear-gradient(135deg, #1f2937, #111827)'
@@ -3061,7 +3068,7 @@ function CharacterBuilder() {
                           newSearches[slotIndex] = e.target.value;
                           setMoveSearches(newSearches);
                         }}
-                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-2 text-sm font-black focus:outline-none"
+                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-3 sm:py-2 text-base sm:text-sm font-black focus:outline-none"
                         style={{ textShadow: '1px 1px 0 #000' }}
                         autoFocus
                       />
@@ -3073,7 +3080,7 @@ function CharacterBuilder() {
                             setSelectedMoves(newMoves);
                             setOpenMoveSlot(null);
                           }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 text-gray-400"
+                          className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 active:bg-gray-500 text-gray-400"
                         >
                           {t.clearSlot}
                         </button>
@@ -3088,7 +3095,7 @@ function CharacterBuilder() {
                                 setSelectedMoves(newMoves);
                                 setOpenMoveSlot(null);
                               }}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 flex items-center gap-2"
+                              className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 active:bg-gray-500 flex items-center gap-2"
                               style={{ textShadow: '1px 1px 0 #000' }}
                             >
                               <span className="text-xs px-1 rounded" style={{ 
@@ -3104,15 +3111,16 @@ function CharacterBuilder() {
                         })}
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
               )})}
             </div>
 
-            {/* Click outside to close */}
+            {/* Click outside to close - hidden on mobile since we have backdrop */}
             {openMoveSlot !== null && (
               <div 
-                className="fixed inset-0 z-40" 
+                className="fixed inset-0 z-40 hidden sm:block" 
                 onClick={() => setOpenMoveSlot(null)}
               />
             )}
@@ -3142,10 +3150,10 @@ function CharacterBuilder() {
         )}
 
         {currentPage === 'capsules' && (
-          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6" style={borderStyle}>
-            <h2 className="text-2xl font-black mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectCapsules}</h2>
+          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-3 sm:p-6" style={borderStyle}>
+            <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectCapsules}</h2>
 
-            <div className="flex flex-wrap gap-4 justify-center mb-6">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 justify-center mb-4 sm:mb-6">
               {[0, 1, 2, 3].map((slotIndex) => {
                 const filteredCapsules = sampleCapsules.filter(capsule => {
                   const capsuleTranslation = t.capsules_list[capsule.name] || { name: capsule.name, desc: capsule.description };
@@ -3157,10 +3165,10 @@ function CharacterBuilder() {
                 });
                 const isOpen = openCapsuleSlot === slotIndex;
                 return (
-                <div key={slotIndex} className="w-40 relative">
+                <div key={slotIndex} className="w-full sm:w-40 relative">
                   <button
                     onClick={() => setOpenCapsuleSlot(isOpen ? null : slotIndex)}
-                    className="w-full h-24 rounded-lg p-2 font-black text-sm cursor-pointer flex items-center justify-center text-center"
+                    className="w-full h-20 sm:h-24 rounded-lg p-2 font-black text-xs sm:text-sm cursor-pointer flex items-center justify-center text-center leading-tight"
                     style={{
                       ...smallBorderStyle,
                       background: selectedCapsules[slotIndex] 
@@ -3174,8 +3182,14 @@ function CharacterBuilder() {
                   </button>
                   
                   {isOpen && (
+                    <>
+                    {/* Mobile backdrop */}
                     <div 
-                      className="absolute top-full left-0 w-64 mt-1 rounded-lg z-50 max-h-80 overflow-hidden flex flex-col"
+                      className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+                      onClick={() => setOpenCapsuleSlot(null)}
+                    />
+                    <div 
+                      className="fixed sm:absolute inset-x-2 sm:inset-x-auto top-1/4 sm:top-full left-auto sm:left-0 w-auto sm:w-64 mt-0 sm:mt-1 rounded-lg z-50 max-h-[60vh] sm:max-h-80 overflow-hidden flex flex-col"
                       style={{
                         ...borderStyle,
                         background: 'linear-gradient(135deg, #1f2937, #111827)'
@@ -3190,11 +3204,11 @@ function CharacterBuilder() {
                           newSearches[slotIndex] = e.target.value;
                           setCapsuleSearches(newSearches);
                         }}
-                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-2 text-sm font-black focus:outline-none"
+                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-3 sm:py-2 text-base sm:text-sm font-black focus:outline-none"
                         style={{ textShadow: '1px 1px 0 #000' }}
                         autoFocus
                       />
-                      <div className="overflow-y-auto max-h-60">
+                      <div className="overflow-y-auto max-h-[50vh] sm:max-h-60">
                         <button
                           onClick={() => {
                             const newCapsules = [...selectedCapsules];
@@ -3202,7 +3216,7 @@ function CharacterBuilder() {
                             setSelectedCapsules(newCapsules);
                             setOpenCapsuleSlot(null);
                           }}
-                          className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 text-gray-400"
+                          className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 text-gray-400 active:bg-gray-500"
                         >
                           {t.clearSlot}
                         </button>
@@ -3217,7 +3231,7 @@ function CharacterBuilder() {
                                 setSelectedCapsules(newCapsules);
                                 setOpenCapsuleSlot(null);
                               }}
-                              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-600 flex items-center gap-2"
+                              className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 active:bg-gray-500 flex items-center gap-2"
                               style={{ textShadow: '1px 1px 0 #000' }}
                             >
                               <span className="text-xs px-1 rounded" style={{ 
@@ -3232,15 +3246,16 @@ function CharacterBuilder() {
                         })}
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
               )})}
             </div>
 
-            {/* Click outside to close */}
+            {/* Click outside to close - hidden on mobile since we have backdrop */}
             {openCapsuleSlot !== null && (
               <div 
-                className="fixed inset-0 z-40" 
+                className="fixed inset-0 z-40 hidden sm:block" 
                 onClick={() => setOpenCapsuleSlot(null)}
               />
             )}
@@ -3248,9 +3263,9 @@ function CharacterBuilder() {
             <div className="space-y-3">
               {selectedCapsules.map((capsule, slotIndex) => (
                 capsule && (
-                  <div key={slotIndex} className="bg-gray-700 bg-opacity-60 rounded-lg p-4" style={borderStyle}>
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-lg font-black" style={{ textShadow: '1px 1px 0 #000' }}>{t.slot} {slotIndex + 1}: {t.capsules_list[capsule.name]?.name || capsule.name}</h3>
+                  <div key={slotIndex} className="bg-gray-700 bg-opacity-60 rounded-lg p-3 sm:p-4" style={borderStyle}>
+                    <div className="flex justify-between items-center mb-2 sm:mb-3">
+                      <h3 className="text-base sm:text-lg font-black" style={{ textShadow: '1px 1px 0 #000' }}>{t.slot} {slotIndex + 1}: {t.capsules_list[capsule.name]?.name || capsule.name}</h3>
                       <span className="text-xs px-2 py-1 rounded font-black" style={{ 
                         background: capsule.category === 'Active' ? '#3b82f6' : 
                                    capsule.category === 'Passive' ? '#10b981' : 
