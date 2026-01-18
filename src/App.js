@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Translations
@@ -1911,11 +1911,12 @@ function CharacterBuilder() {
     return b;
   }, [selectedRace, level, manualStats, activeForms, absorptionMode, playerAbsorptionLevel, selectedNPC, selectedAlienSubrace, possessionMode, possessedStatPoints, selectedCapsules]);
 
-  const freePoints = build.getFreeStatPoints();
-  const baseStats = build.getBaseStats();
-  const finalStats = build.getFinalStats();
+  // Memoize derived stats to prevent recalculation
+  const freePoints = useMemo(() => build.getFreeStatPoints(), [build]);
+  const baseStats = useMemo(() => build.getBaseStats(), [build]);
+  const finalStats = useMemo(() => build.getFinalStats(), [build]);
 
-  const handleStatInput = (stat, value) => {
+  const handleStatInput = useCallback((stat, value) => {
     if (value === '') {
       setManualStats(prev => ({ ...prev, [stat]: 0 }));
       return;
@@ -1927,23 +1928,25 @@ function CharacterBuilder() {
       return;
     }
     
-    // Calculate how many points would be spent with this new value
-    const otherStats = Object.entries(manualStats)
-      .filter(([k]) => k !== stat)
-      .reduce((sum, [, v]) => sum + v, 0);
-    
-    const totalSpent = otherStats + numValue;
-    
-    // If over limit, cap it at max possible
-    if (totalSpent > level) {
-      const maxPossible = level - otherStats;
-      setManualStats(prev => ({ ...prev, [stat]: Math.max(0, maxPossible) }));
-    } else {
-      setManualStats(prev => ({ ...prev, [stat]: numValue }));
-    }
-  };
+    setManualStats(prev => {
+      // Calculate how many points would be spent with this new value
+      const otherStats = Object.entries(prev)
+        .filter(([k]) => k !== stat)
+        .reduce((sum, [, v]) => sum + v, 0);
+      
+      const totalSpent = otherStats + numValue;
+      
+      // If over limit, cap it at max possible
+      if (totalSpent > level) {
+        const maxPossible = level - otherStats;
+        return { ...prev, [stat]: Math.max(0, maxPossible) };
+      } else {
+        return { ...prev, [stat]: numValue };
+      }
+    });
+  }, [level]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setManualStats({
       hpMax: 0,
       kiMax: 0,
@@ -1959,20 +1962,22 @@ function CharacterBuilder() {
     setCapsuleSearches(['', '', '', '']);
     setSelectedMoves([null, null, null, null, null, null, null, null, null, null]);
     setMoveSearches(['', '', '', '', '', '', '', '', '', '']);
-  };
+  }, []);
 
-  const handleQuickMax = (stat) => {
-    const otherStats = Object.entries(manualStats)
-      .filter(([k]) => k !== stat)
-      .reduce((sum, [, v]) => sum + v, 0);
-    const maxPossible = level - otherStats;
-    setManualStats(prev => ({ ...prev, [stat]: Math.max(0, maxPossible) }));
-  };
+  const handleQuickMax = useCallback((stat) => {
+    setManualStats(prev => {
+      const otherStats = Object.entries(prev)
+        .filter(([k]) => k !== stat)
+        .reduce((sum, [, v]) => sum + v, 0);
+      const maxPossible = level - otherStats;
+      return { ...prev, [stat]: Math.max(0, maxPossible) };
+    });
+  }, [level]);
 
-  const raceMap = { 'Human': 'H', 'Saiyan': 'S', 'Namekian': 'N', 'Frieza': 'F', 'Android': 'A', 'Majin': 'M', 'Jiren': 'J', 'Alien': 'AL', 'Tuffle': 'T' };
-  const masteryMap = { 'normal': '0', 'mastered': '1', 'perfected': '2' };
+  const raceMap = useMemo(() => ({ 'Human': 'H', 'Saiyan': 'S', 'Namekian': 'N', 'Frieza': 'F', 'Android': 'A', 'Majin': 'M', 'Jiren': 'J', 'Alien': 'AL', 'Tuffle': 'T' }), []);
+  const masteryMap = useMemo(() => ({ 'normal': '0', 'mastered': '1', 'perfected': '2' }), []);
 
-  const handleExportBuild = () => {
+  const handleExportBuild = useCallback(() => {
     const buildData = {
       r: raceMap[selectedRace.name],
       l: level,
@@ -2003,35 +2008,36 @@ function CharacterBuilder() {
       // Fallback if clipboard fails
       prompt('Copy this build URL:', buildUrl);
     });
-  };
+  }, [raceMap, masteryMap, selectedRace, level, manualStats, activeForms, selectedCapsules, selectedMoves, selectedAlienSubrace]);
 
-  const toggleForm = (form, mastery = 'normal') => {
-    const existingIndex = activeForms.findIndex(f => f.form.name === form.name);
-    
-    if (existingIndex >= 0) {
-      if (activeForms[existingIndex].mastery === mastery) {
-        setActiveForms(prev => prev.filter((_, i) => i !== existingIndex));
-      } else {
-        setActiveForms(prev => prev.map((f, i) => 
-          i === existingIndex ? { ...f, mastery } : f
-        ));
-      }
-    } else {
-      if (!form.stackable) {
-        const hasNonStackable = activeForms.some(f => !f.form.stackable);
-        if (hasNonStackable) {
-          setActiveForms(prev => [
-            ...prev.filter(f => f.form.stackable),
-            { form, mastery }
-          ]);
-          return;
+  const toggleForm = useCallback((form, mastery = 'normal') => {
+    setActiveForms(prev => {
+      const existingIndex = prev.findIndex(f => f.form.name === form.name);
+      
+      if (existingIndex >= 0) {
+        if (prev[existingIndex].mastery === mastery) {
+          return prev.filter((_, i) => i !== existingIndex);
+        } else {
+          return prev.map((f, i) => 
+            i === existingIndex ? { ...f, mastery } : f
+          );
         }
+      } else {
+        if (!form.stackable) {
+          const hasNonStackable = prev.some(f => !f.form.stackable);
+          if (hasNonStackable) {
+            return [
+              ...prev.filter(f => f.form.stackable),
+              { form, mastery }
+            ];
+          }
+        }
+        return [...prev, { form, mastery }];
       }
-      setActiveForms(prev => [...prev, { form, mastery }]);
-    }
-  };
+    });
+  }, []);
 
-  const statNames = {
+  const statNames = useMemo(() => ({
     hpMax: t.hpMax,
     kiMax: t.kiMax,
     meleeDamage: t.meleeDamage,
@@ -2039,9 +2045,10 @@ function CharacterBuilder() {
     meleeResistance: t.meleeResistance,
     kiResistance: t.kiResistance,
     speed: t.speed
-  };
+  }), [t]);
 
-  const Section = ({ title, id, children }) => (
+  // Memoize Section component
+  const Section = useCallback(({ title, id, children }) => (
     <div className="bg-gray-800 bg-opacity-50 rounded-lg overflow-hidden" style={borderStyle}>
       <button
         onClick={() => setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }))}
@@ -2053,7 +2060,52 @@ function CharacterBuilder() {
       </button>
       {expandedSections[id] && <div className={`px-2 pb-2 ${id === 'forms' ? '-mt-1' : 'pt-2'}`}>{children}</div>}
     </div>
-  );
+  ), [expandedSections]);
+
+  // Pre-filter moves by race (doesn't depend on search)
+  const raceFilteredMoves = useMemo(() => {
+    return sampleMoves.filter(move => {
+      // If move has no race restrictions, allow it
+      if (!move.allowedRaces) return true;
+      
+      // Check if selected race can use this move
+      const raceName = selectedRace.name;
+      const subraceKey = selectedRace.name === 'Alien' ? `Alien:${selectedAlienSubrace}` : null;
+      
+      return move.allowedRaces.some(allowed => {
+        if (allowed === raceName) return true;
+        if (subraceKey && allowed === subraceKey) return true;
+        if (raceName === 'Alien' && allowed === 'Alien') return true;
+        return false;
+      });
+    });
+  }, [selectedRace.name, selectedAlienSubrace]);
+
+  // Helper function to filter moves by search
+  const getFilteredMoves = useCallback((searchTerm) => {
+    if (!searchTerm) return raceFilteredMoves;
+    const search = searchTerm.toLowerCase();
+    return raceFilteredMoves.filter(move => {
+      const translatedName = t.moves[move.name] || move.name;
+      return move.name.toLowerCase().includes(search) ||
+        translatedName.toLowerCase().includes(search) ||
+        move.category.toLowerCase().includes(search);
+    });
+  }, [raceFilteredMoves, t.moves]);
+
+  // Helper function to filter capsules by search
+  const getFilteredCapsules = useCallback((searchTerm) => {
+    if (!searchTerm) return sampleCapsules;
+    const search = searchTerm.toLowerCase();
+    return sampleCapsules.filter(capsule => {
+      const capsuleTranslation = t.capsules_list[capsule.name] || { name: capsule.name, desc: capsule.description };
+      return capsule.name.toLowerCase().includes(search) ||
+        capsuleTranslation.name.toLowerCase().includes(search) ||
+        capsule.category.toLowerCase().includes(search) ||
+        capsule.description.toLowerCase().includes(search) ||
+        capsuleTranslation.desc.toLowerCase().includes(search);
+    });
+  }, [t.capsules_list]);
 
   return (
     <div className="min-h-screen text-white" style={{ 
@@ -3002,31 +3054,8 @@ function CharacterBuilder() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((slotIndex) => {
-                // Filter moves based on search and race access
-                const filteredMoves = sampleMoves.filter(move => {
-                  // First check search filter - search in both original name and translated name
-                  const translatedName = t.moves[move.name] || move.name;
-                  const matchesSearch = move.name.toLowerCase().includes(moveSearches[slotIndex].toLowerCase()) ||
-                    translatedName.toLowerCase().includes(moveSearches[slotIndex].toLowerCase()) ||
-                    move.category.toLowerCase().includes(moveSearches[slotIndex].toLowerCase());
-                  
-                  if (!matchesSearch) return false;
-                  
-                  // If move has no race restrictions, allow it
-                  if (!move.allowedRaces) return true;
-                  
-                  // Check if selected race can use this move
-                  const raceName = selectedRace.name;
-                  const subraceKey = selectedRace.name === 'Alien' ? `Alien:${selectedAlienSubrace}` : null;
-                  
-                  return move.allowedRaces.some(allowed => {
-                    if (allowed === raceName) return true;
-                    if (subraceKey && allowed === subraceKey) return true;
-                    // For Alien, also check if just 'Alien' is in allowedRaces (meaning all alien subraces)
-                    if (raceName === 'Alien' && allowed === 'Alien') return true;
-                    return false;
-                  });
-                });
+                // Use memoized filter function
+                const filteredMoves = getFilteredMoves(moveSearches[slotIndex]);
                 const isOpen = openMoveSlot === slotIndex;
                 return (
                 <div key={slotIndex} className="relative">
@@ -3155,14 +3184,8 @@ function CharacterBuilder() {
 
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 justify-center mb-4 sm:mb-6">
               {[0, 1, 2, 3].map((slotIndex) => {
-                const filteredCapsules = sampleCapsules.filter(capsule => {
-                  const capsuleTranslation = t.capsules_list[capsule.name] || { name: capsule.name, desc: capsule.description };
-                  return capsule.name.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
-                    capsuleTranslation.name.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
-                    capsule.category.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
-                    capsule.description.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
-                    capsuleTranslation.desc.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase());
-                });
+                // Use memoized filter function
+                const filteredCapsules = getFilteredCapsules(capsuleSearches[slotIndex]);
                 const isOpen = openCapsuleSlot === slotIndex;
                 return (
                 <div key={slotIndex} className="w-full sm:w-40 relative">
@@ -3188,7 +3211,7 @@ function CharacterBuilder() {
                       className="fixed inset-0 bg-black/50 z-40 sm:hidden"
                       onClick={() => setOpenCapsuleSlot(null)}
                     />
-                    <div 
+                    <div
                       className="fixed sm:absolute inset-x-2 sm:inset-x-auto top-1/4 sm:top-full left-auto sm:left-0 w-auto sm:w-64 mt-0 sm:mt-1 rounded-lg z-50 max-h-[60vh] sm:max-h-80 overflow-hidden flex flex-col"
                       style={{
                         ...borderStyle,
