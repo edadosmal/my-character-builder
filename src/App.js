@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, memo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Translations
@@ -57,6 +57,7 @@ const translations = {
     possession: 'Possession',
     possessRace: 'Possess Race',
     noPossession: '-- No Possession --',
+    possessedRaceLevel: 'Possessed Race Level',
     possessedRaceExtraStatPoints: 'Possessed Race Extra Stat Points',
     
     // Skills page
@@ -347,6 +348,7 @@ const translations = {
     possession: 'Posesión',
     possessRace: 'Poseer Raza',
     noPossession: '-- Sin Posesión --',
+    possessedRaceLevel: 'Nivel de la Raza Poseída',
     possessedRaceExtraStatPoints: 'Puntos Extra de la Raza Poseída',
     
     // Skills page
@@ -637,6 +639,7 @@ const translations = {
     possession: 'Possessão',
     possessRace: 'Possuir Raça',
     noPossession: '-- Sem Possessão --',
+    possessedRaceLevel: 'Nível da Raça Possuída',
     possessedRaceExtraStatPoints: 'Pontos Extras da Raça Possuída',
     
     // Skills page
@@ -1238,6 +1241,15 @@ class CharacterBuild {
       kiResistance: 0,
       speed: 0
     };
+    this.possessionStats = { // For Tuffle possession
+      hpMax: 0,
+      kiMax: 0,
+      meleeDamage: 0,
+      kiDamage: 0,
+      meleeResistance: 0,
+      kiResistance: 0,
+      speed: 0
+    };
     this.capsules = []; // Active capsules
   }
 
@@ -1275,6 +1287,11 @@ class CharacterBuild {
     // Add absorption bonuses (for Majin)
     Object.keys(this.absorptionStats).forEach(stat => {
       stats[stat] += this.absorptionStats[stat];
+    });
+
+    // Add possession bonuses (for Tuffle)
+    Object.keys(this.possessionStats).forEach(stat => {
+      stats[stat] += this.possessionStats[stat];
     });
 
     // Add capsule bonuses
@@ -1342,7 +1359,7 @@ const sampleRaces = [
       meleeResistance: 10,
       kiResistance: 10,
       speed: 10
-      }, ['kiMax'], 'max-power-icon.png'),
+      }, ['kiMax'], 'max-power-icon.png', { normal: 1.0, mastered: 3.0, perfected: 5.0 }),
 
     new Form('Mystic Kaioken', false, 'flat', {
       meleeDamage: 260,
@@ -1581,6 +1598,13 @@ const sampleRaces = [
     }, [], 'fear-icon.png')
   ]),
   new Race('Alien', alienSubraces['Generic'], [
+    new Form('Kaioken', false, 'multiplier', {
+      meleeDamage: 2,
+      kiDamage: 2,
+      meleeResistance: 1,
+      kiResistance: 1,
+      speed: 2
+    }, [], 'kaioken-icon.png'),
     new Form('Potential Unleash', false, 'flat', {
       meleeDamage: 75,
       kiDamage: 75,
@@ -1611,7 +1635,7 @@ const sampleRaces = [
       meleeResistance: 10,
       kiResistance: 10,
       speed: 0
-    }, ['speed'], 'max-power-icon.png'),
+    }, ['speed'], 'max-power-icon.png', { normal: 1.0, mastered: 3.0, perfected: 5.0 }),
     
     new Form('Gigantification', false, 'flat', {
       hpMax: 200,
@@ -1772,6 +1796,7 @@ function CharacterBuilder() {
 
   // Tuffle possession state
   const [possessionMode, setPossessionMode] = useState('none'); // 'none' or race name
+  const [possessedLevel, setPossessedLevel] = useState(0);
   const [possessedStatPoints, setPossessedStatPoints] = useState({
     meleeDamage: 0,
     kiDamage: 0,
@@ -1889,8 +1914,8 @@ function CharacterBuilder() {
           possessedRace = new Race('Alien', alienSubraces[selectedAlienSubrace], possessedRace.forms);
         }
         
-        // Get base stats of possessed race at current level
-        const possessedBaseStats = possessedRace.getBaseStats(level);
+        // Get base stats of possessed race at possessed level
+        const possessedBaseStats = possessedRace.getBaseStats(possessedLevel);
         
         // Calculate 10% of (base stats + extra points)
         Object.keys(possessedBaseStats).forEach(stat => {
@@ -1899,7 +1924,7 @@ function CharacterBuilder() {
             const extraValue = possessedStatPoints[stat] || 0;
             const totalValue = baseValue + extraValue;
             const bonusValue = Math.floor(totalValue * 0.1);
-            b.manualStats[stat] = (b.manualStats[stat] || 0) + bonusValue;
+            b.possessionStats[stat] = bonusValue;
           }
         });
       }
@@ -1909,14 +1934,13 @@ function CharacterBuilder() {
     b.capsules = selectedCapsules.filter(c => c !== null);
     
     return b;
-  }, [selectedRace, level, manualStats, activeForms, absorptionMode, playerAbsorptionLevel, selectedNPC, selectedAlienSubrace, possessionMode, possessedStatPoints, selectedCapsules]);
+  }, [selectedRace, level, manualStats, activeForms, absorptionMode, playerAbsorptionLevel, selectedNPC, selectedAlienSubrace, possessionMode, possessedLevel, possessedStatPoints, selectedCapsules]);
 
-  // Memoize derived stats to prevent recalculation
-  const freePoints = useMemo(() => build.getFreeStatPoints(), [build]);
-  const baseStats = useMemo(() => build.getBaseStats(), [build]);
-  const finalStats = useMemo(() => build.getFinalStats(), [build]);
+  const freePoints = build.getFreeStatPoints();
+  const baseStats = build.getBaseStats();
+  const finalStats = build.getFinalStats();
 
-  const handleStatInput = useCallback((stat, value) => {
+  const handleStatInput = (stat, value) => {
     if (value === '') {
       setManualStats(prev => ({ ...prev, [stat]: 0 }));
       return;
@@ -1928,25 +1952,23 @@ function CharacterBuilder() {
       return;
     }
     
-    setManualStats(prev => {
-      // Calculate how many points would be spent with this new value
-      const otherStats = Object.entries(prev)
-        .filter(([k]) => k !== stat)
-        .reduce((sum, [, v]) => sum + v, 0);
-      
-      const totalSpent = otherStats + numValue;
-      
-      // If over limit, cap it at max possible
-      if (totalSpent > level) {
-        const maxPossible = level - otherStats;
-        return { ...prev, [stat]: Math.max(0, maxPossible) };
-      } else {
-        return { ...prev, [stat]: numValue };
-      }
-    });
-  }, [level]);
+    // Calculate how many points would be spent with this new value
+    const otherStats = Object.entries(manualStats)
+      .filter(([k]) => k !== stat)
+      .reduce((sum, [, v]) => sum + v, 0);
+    
+    const totalSpent = otherStats + numValue;
+    
+    // If over limit, cap it at max possible
+    if (totalSpent > level) {
+      const maxPossible = level - otherStats;
+      setManualStats(prev => ({ ...prev, [stat]: Math.max(0, maxPossible) }));
+    } else {
+      setManualStats(prev => ({ ...prev, [stat]: numValue }));
+    }
+  };
 
-  const handleReset = useCallback(() => {
+  const handleReset = () => {
     setManualStats({
       hpMax: 0,
       kiMax: 0,
@@ -1962,22 +1984,20 @@ function CharacterBuilder() {
     setCapsuleSearches(['', '', '', '']);
     setSelectedMoves([null, null, null, null, null, null, null, null, null, null]);
     setMoveSearches(['', '', '', '', '', '', '', '', '', '']);
-  }, []);
+  };
 
-  const handleQuickMax = useCallback((stat) => {
-    setManualStats(prev => {
-      const otherStats = Object.entries(prev)
-        .filter(([k]) => k !== stat)
-        .reduce((sum, [, v]) => sum + v, 0);
-      const maxPossible = level - otherStats;
-      return { ...prev, [stat]: Math.max(0, maxPossible) };
-    });
-  }, [level]);
+  const handleQuickMax = (stat) => {
+    const otherStats = Object.entries(manualStats)
+      .filter(([k]) => k !== stat)
+      .reduce((sum, [, v]) => sum + v, 0);
+    const maxPossible = level - otherStats;
+    setManualStats(prev => ({ ...prev, [stat]: Math.max(0, maxPossible) }));
+  };
 
-  const raceMap = useMemo(() => ({ 'Human': 'H', 'Saiyan': 'S', 'Namekian': 'N', 'Frieza': 'F', 'Android': 'A', 'Majin': 'M', 'Jiren': 'J', 'Alien': 'AL', 'Tuffle': 'T' }), []);
-  const masteryMap = useMemo(() => ({ 'normal': '0', 'mastered': '1', 'perfected': '2' }), []);
+  const raceMap = { 'Human': 'H', 'Saiyan': 'S', 'Namekian': 'N', 'Frieza': 'F', 'Android': 'A', 'Majin': 'M', 'Jiren': 'J', 'Alien': 'AL', 'Tuffle': 'T' };
+  const masteryMap = { 'normal': '0', 'mastered': '1', 'perfected': '2' };
 
-  const handleExportBuild = useCallback(() => {
+  const handleExportBuild = () => {
     const buildData = {
       r: raceMap[selectedRace.name],
       l: level,
@@ -2008,36 +2028,35 @@ function CharacterBuilder() {
       // Fallback if clipboard fails
       prompt('Copy this build URL:', buildUrl);
     });
-  }, [raceMap, masteryMap, selectedRace, level, manualStats, activeForms, selectedCapsules, selectedMoves, selectedAlienSubrace]);
+  };
 
-  const toggleForm = useCallback((form, mastery = 'normal') => {
-    setActiveForms(prev => {
-      const existingIndex = prev.findIndex(f => f.form.name === form.name);
-      
-      if (existingIndex >= 0) {
-        if (prev[existingIndex].mastery === mastery) {
-          return prev.filter((_, i) => i !== existingIndex);
-        } else {
-          return prev.map((f, i) => 
-            i === existingIndex ? { ...f, mastery } : f
-          );
-        }
+  const toggleForm = (form, mastery = 'normal') => {
+    const existingIndex = activeForms.findIndex(f => f.form.name === form.name);
+    
+    if (existingIndex >= 0) {
+      if (activeForms[existingIndex].mastery === mastery) {
+        setActiveForms(prev => prev.filter((_, i) => i !== existingIndex));
       } else {
-        if (!form.stackable) {
-          const hasNonStackable = prev.some(f => !f.form.stackable);
-          if (hasNonStackable) {
-            return [
-              ...prev.filter(f => f.form.stackable),
-              { form, mastery }
-            ];
-          }
-        }
-        return [...prev, { form, mastery }];
+        setActiveForms(prev => prev.map((f, i) => 
+          i === existingIndex ? { ...f, mastery } : f
+        ));
       }
-    });
-  }, []);
+    } else {
+      if (!form.stackable) {
+        const hasNonStackable = activeForms.some(f => !f.form.stackable);
+        if (hasNonStackable) {
+          setActiveForms(prev => [
+            ...prev.filter(f => f.form.stackable),
+            { form, mastery }
+          ]);
+          return;
+        }
+      }
+      setActiveForms(prev => [...prev, { form, mastery }]);
+    }
+  };
 
-  const statNames = useMemo(() => ({
+  const statNames = {
     hpMax: t.hpMax,
     kiMax: t.kiMax,
     meleeDamage: t.meleeDamage,
@@ -2045,10 +2064,9 @@ function CharacterBuilder() {
     meleeResistance: t.meleeResistance,
     kiResistance: t.kiResistance,
     speed: t.speed
-  }), [t]);
+  };
 
-  // Memoize Section component
-  const Section = useCallback(({ title, id, children }) => (
+  const Section = ({ title, id, children }) => (
     <div className="bg-gray-800 bg-opacity-50 rounded-lg overflow-hidden" style={borderStyle}>
       <button
         onClick={() => setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }))}
@@ -2060,52 +2078,7 @@ function CharacterBuilder() {
       </button>
       {expandedSections[id] && <div className={`px-2 pb-2 ${id === 'forms' ? '-mt-1' : 'pt-2'}`}>{children}</div>}
     </div>
-  ), [expandedSections]);
-
-  // Pre-filter moves by race (doesn't depend on search)
-  const raceFilteredMoves = useMemo(() => {
-    return sampleMoves.filter(move => {
-      // If move has no race restrictions, allow it
-      if (!move.allowedRaces) return true;
-      
-      // Check if selected race can use this move
-      const raceName = selectedRace.name;
-      const subraceKey = selectedRace.name === 'Alien' ? `Alien:${selectedAlienSubrace}` : null;
-      
-      return move.allowedRaces.some(allowed => {
-        if (allowed === raceName) return true;
-        if (subraceKey && allowed === subraceKey) return true;
-        if (raceName === 'Alien' && allowed === 'Alien') return true;
-        return false;
-      });
-    });
-  }, [selectedRace.name, selectedAlienSubrace]);
-
-  // Helper function to filter moves by search
-  const getFilteredMoves = useCallback((searchTerm) => {
-    if (!searchTerm) return raceFilteredMoves;
-    const search = searchTerm.toLowerCase();
-    return raceFilteredMoves.filter(move => {
-      const translatedName = t.moves[move.name] || move.name;
-      return move.name.toLowerCase().includes(search) ||
-        translatedName.toLowerCase().includes(search) ||
-        move.category.toLowerCase().includes(search);
-    });
-  }, [raceFilteredMoves, t.moves]);
-
-  // Helper function to filter capsules by search
-  const getFilteredCapsules = useCallback((searchTerm) => {
-    if (!searchTerm) return sampleCapsules;
-    const search = searchTerm.toLowerCase();
-    return sampleCapsules.filter(capsule => {
-      const capsuleTranslation = t.capsules_list[capsule.name] || { name: capsule.name, desc: capsule.description };
-      return capsule.name.toLowerCase().includes(search) ||
-        capsuleTranslation.name.toLowerCase().includes(search) ||
-        capsule.category.toLowerCase().includes(search) ||
-        capsule.description.toLowerCase().includes(search) ||
-        capsuleTranslation.desc.toLowerCase().includes(search);
-    });
-  }, [t.capsules_list]);
+  );
 
   return (
     <div className="min-h-screen text-white" style={{ 
@@ -2113,11 +2086,10 @@ function CharacterBuilder() {
       backgroundSize: 'cover', 
       backgroundPosition: 'center center', 
       backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'scroll',
+      backgroundAttachment: 'fixed',
       position: 'relative',
       backgroundColor: 'linear-gradient(135deg, #166534 50%, #22c55e 50%)',
-      padding: '0.5rem',
-      paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)'
+      padding: '1rem'
     }}>
       <div style={{
         position: 'absolute',
@@ -2143,14 +2115,14 @@ function CharacterBuilder() {
         pointerEvents: 'none',
         zIndex: 0
       }}></div>
-      <div className="max-w-6xl mx-auto px-2 sm:px-4" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="flex justify-center mb-1 sm:mb-2 relative">
-          <img src="/logo.png" alt="FS:R Builder" className="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px]" />
+      <div className="max-w-5xl mx-auto" style={{ position: 'relative', zIndex: 1, transform: 'scale(0.7)', transformOrigin: 'top center', width: '142.86%' }}>
+        <div className="flex justify-center mb-2 relative">
+          <img src="/logo.png" alt="FS:R Builder" className="w-[150px] h-[150px]" />
           {/* Language Selector */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex gap-1">
             <button
               onClick={() => setLanguage('en')}
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-base sm:text-lg transition-colors flex items-center justify-center ${language === 'en' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-9 h-9 rounded text-xl transition-colors flex items-center justify-center ${language === 'en' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'en' 
@@ -2163,7 +2135,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setLanguage('es')}
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-base sm:text-lg transition-colors flex items-center justify-center ${language === 'es' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-9 h-9 rounded text-xl transition-colors flex items-center justify-center ${language === 'es' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'es' 
@@ -2176,7 +2148,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setLanguage('pt')}
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-base sm:text-lg transition-colors flex items-center justify-center ${language === 'pt' ? 'ring-2 ring-green-400' : ''}`}
+              className={`w-9 h-9 rounded text-xl transition-colors flex items-center justify-center ${language === 'pt' ? 'ring-2 ring-green-400' : ''}`}
               style={{
                 ...smallBorderStyle,
                 background: language === 'pt' 
@@ -2190,11 +2162,11 @@ function CharacterBuilder() {
           </div>
         </div>
 
-        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-1 sm:p-1.5 mb-2 sm:mb-3" style={borderStyle}>
-          <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
+        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-1.5 mb-2" style={borderStyle}>
+          <div className="flex gap-2 justify-center">
             <button
               onClick={() => setCurrentPage('builder')}
-              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
+              className={`px-6 py-1.5 rounded font-black text-sm transition-colors ${
                 currentPage === 'builder'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2219,7 +2191,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setCurrentPage('movekit')}
-              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
+              className={`px-6 py-1.5 rounded font-black text-sm transition-colors ${
                 currentPage === 'movekit'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2244,7 +2216,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setCurrentPage('capsules')}
-              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
+              className={`px-6 py-1.5 rounded font-black text-sm transition-colors ${
                 currentPage === 'capsules'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2269,7 +2241,7 @@ function CharacterBuilder() {
             </button>
             <button
               onClick={() => setCurrentPage('about')}
-              className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded font-black text-xs sm:text-sm transition-colors flex-1 sm:flex-none max-w-[80px] sm:max-w-none ${
+              className={`px-6 py-1.5 rounded font-black text-sm transition-colors ${
                 currentPage === 'about'
                   ? 'bg-green-600'
                   : 'hover:bg-gray-600'
@@ -2297,17 +2269,17 @@ function CharacterBuilder() {
 
         {currentPage === 'builder' && (
           <>
-            <div className="bg-gray-800 bg-opacity-80 rounded-lg p-2 sm:p-3 mb-2 sm:mb-3" style={borderStyle}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+            <div className="bg-gray-800 bg-opacity-80 rounded-lg p-2 mb-2" style={borderStyle}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs sm:text-sm font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.race}</label>
+              <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.race}</label>
               <select
                 value={selectedRace.name}
                 onChange={(e) => {
                   setSelectedRace(sampleRaces.find(r => r.name === e.target.value));
                   setActiveForms([]);
                 }}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2.5 text-sm sm:text-base font-black transition-all duration-300"
+                className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm font-black transition-all duration-300"
                 style={{ 
                   textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                   background: `
@@ -2337,14 +2309,14 @@ function CharacterBuilder() {
 
             {selectedRace.name === 'Alien' && (
               <div>
-                <label className="block text-xs sm:text-sm font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.alienSubrace}</label>
+                <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.alienSubrace}</label>
                 <select
                   value={selectedAlienSubrace}
                   onChange={(e) => {
                     setSelectedAlienSubrace(e.target.value);
                     setActiveForms([]);
                   }}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2.5 text-sm sm:text-base font-black transition-all duration-300"
+                  className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm font-black transition-all duration-300"
                   style={{ 
                     textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                     background: `
@@ -2374,9 +2346,10 @@ function CharacterBuilder() {
             )}
 
             <div>
-              <label className="block text-xs sm:text-sm font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.levelRange}</label>
+              <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.levelRange}</label>
               <div className="flex gap-2">
                 <input
+                  key={level}
                   type="text"
                   defaultValue={level === 0 ? '' : level}
                   onBlur={(e) => setLevel(Math.min(305, Math.max(0, parseInt(e.target.value) || 0)))}
@@ -2387,7 +2360,7 @@ function CharacterBuilder() {
                     }
                   }}
                   placeholder="0"
-                  className="flex-1 bg-gray-800 border border-gray-600 rounded px-3 py-2 text-center font-bold text-sm sm:text-base focus:border-blue-500 focus:outline-none transition-all duration-300"
+                  className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-center font-bold text-xs focus:border-blue-500 focus:outline-none transition-all duration-300"
                   style={{ 
                     background: `
                       linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
@@ -2410,7 +2383,7 @@ function CharacterBuilder() {
                 />
                 <button
                   onClick={() => setLevel(305)}
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded text-sm font-black transition-colors"
+                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 rounded text-xs font-black transition-colors"
                   style={{ textShadow: '1px 1px 0 #000' }}
                 >
                   {t.max}
@@ -2457,7 +2430,7 @@ function CharacterBuilder() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <Section title={t.extraPoints} id="stats">
               <div className="rounded p-1.5 mb-2" style={{ 
@@ -2493,7 +2466,6 @@ function CharacterBuilder() {
                       <span className="text-xs font-black" style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.base}: {baseStats[key]}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">{t.manual}:</span>
                       <input
                         key={`${key}-${manualStats[key]}`}
                         type="text"
@@ -2570,9 +2542,9 @@ function CharacterBuilder() {
                 }
               `}</style>
               <div 
-                className="forms-scroll-container space-y-2 overflow-y-auto pr-2" 
+                className="forms-scroll-container space-y-2 overflow-y-scroll pr-2" 
                 style={{ 
-                  maxHeight: '320px',
+                  maxHeight: '260px',
                   scrollbarWidth: 'auto',
                   scrollbarColor: '#e5e7eb #1f2937'
                 }}
@@ -2895,6 +2867,7 @@ function CharacterBuilder() {
                       value={possessionMode}
                       onChange={(e) => {
                         setPossessionMode(e.target.value);
+                        setPossessedLevel(0);
                         setPossessedStatPoints({
                           meleeDamage: 0,
                           kiDamage: 0,
@@ -2903,7 +2876,7 @@ function CharacterBuilder() {
                           speed: 0
                         });
                       }}
-                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm font-black transition-all duration-300"
+                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm font-black transition-all duration-300"
                       style={{ 
                         textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                         background: `
@@ -2941,7 +2914,7 @@ function CharacterBuilder() {
                           setSelectedAlienSubrace(e.target.value);
                           setActiveForms([]);
                         }}
-                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1.5 text-sm font-black transition-all duration-300"
+                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm font-black transition-all duration-300"
                         style={{ 
                           textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
                           background: `
@@ -2967,6 +2940,54 @@ function CharacterBuilder() {
                           <option key={subrace} value={subrace}>{subrace}</option>
                         ))}
                       </select>
+                    </div>
+                  )}
+
+                  {possessionMode !== 'none' && (
+                    <div>
+                      <label className="block text-xs font-black mb-1" style={{ color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000' }}>{t.possessedRaceLevel}</label>
+                      <div className="flex gap-2">
+                        <input
+                          key={possessedLevel}
+                          type="text"
+                          defaultValue={possessedLevel === 0 ? '' : possessedLevel}
+                          onBlur={(e) => setPossessedLevel(Math.min(305, Math.max(0, parseInt(e.target.value) || 0)))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              setPossessedLevel(Math.min(305, Math.max(0, parseInt(e.target.value) || 0)));
+                              e.target.blur();
+                            }
+                          }}
+                          placeholder="0"
+                          className="flex-1 bg-gray-800 border border-gray-600 rounded px-2 py-0.5 text-center font-bold text-xs focus:border-blue-500 focus:outline-none transition-all duration-300"
+                          style={{ 
+                            background: `
+                              linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                              #1f2937
+                            `,
+                            backdropFilter: 'blur(4px)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = `
+                              linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, transparent 60%),
+                              #1f2937
+                            `;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = `
+                              linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                              #1f2937
+                            `;
+                          }}
+                        />
+                        <button
+                          onClick={() => setPossessedLevel(305)}
+                          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-500 rounded text-xs font-black transition-colors"
+                          style={{ textShadow: '1px 1px 0 #000' }}
+                        >
+                          {t.max}
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -3049,19 +3070,42 @@ function CharacterBuilder() {
         )}
 
         {currentPage === 'movekit' && (
-          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-3 sm:p-6" style={borderStyle}>
-            <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectMoves}</h2>
+          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6" style={borderStyle}>
+            <h2 className="text-2xl font-black mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectMoves}</h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((slotIndex) => {
-                // Use memoized filter function
-                const filteredMoves = getFilteredMoves(moveSearches[slotIndex]);
+                // Filter moves based on search and race access
+                const filteredMoves = sampleMoves.filter(move => {
+                  // First check search filter - search in both original name and translated name
+                  const translatedName = t.moves[move.name] || move.name;
+                  const matchesSearch = move.name.toLowerCase().includes(moveSearches[slotIndex].toLowerCase()) ||
+                    translatedName.toLowerCase().includes(moveSearches[slotIndex].toLowerCase()) ||
+                    move.category.toLowerCase().includes(moveSearches[slotIndex].toLowerCase());
+                  
+                  if (!matchesSearch) return false;
+                  
+                  // If move has no race restrictions, allow it
+                  if (!move.allowedRaces) return true;
+                  
+                  // Check if selected race can use this move
+                  const raceName = selectedRace.name;
+                  const subraceKey = selectedRace.name === 'Alien' ? `Alien:${selectedAlienSubrace}` : null;
+                  
+                  return move.allowedRaces.some(allowed => {
+                    if (allowed === raceName) return true;
+                    if (subraceKey && allowed === subraceKey) return true;
+                    // For Alien, also check if just 'Alien' is in allowedRaces (meaning all alien subraces)
+                    if (raceName === 'Alien' && allowed === 'Alien') return true;
+                    return false;
+                  });
+                });
                 const isOpen = openMoveSlot === slotIndex;
                 return (
                 <div key={slotIndex} className="relative">
                   <button
                     onClick={() => setOpenMoveSlot(isOpen ? null : slotIndex)}
-                    className="w-full h-14 sm:h-16 rounded-lg p-1.5 sm:p-2 font-black text-[10px] sm:text-xs cursor-pointer flex items-center justify-center text-center leading-tight"
+                    className="w-full h-16 rounded-lg p-2 font-black text-xs cursor-pointer flex items-center justify-center text-center"
                     style={{
                       ...smallBorderStyle,
                       background: selectedMoves[slotIndex] 
@@ -3075,14 +3119,8 @@ function CharacterBuilder() {
                   </button>
                   
                   {isOpen && (
-                    <>
-                    {/* Mobile backdrop */}
                     <div 
-                      className="fixed inset-0 bg-black/50 z-40 sm:hidden"
-                      onClick={() => setOpenMoveSlot(null)}
-                    />
-                    <div 
-                      className="fixed sm:absolute inset-x-2 sm:inset-x-auto top-1/4 sm:top-full left-auto sm:left-0 w-auto sm:w-56 mt-0 sm:mt-1 rounded-lg z-50 max-h-[60vh] sm:max-h-72 overflow-hidden flex flex-col"
+                      className="absolute top-full left-0 w-56 mt-1 rounded-lg z-50 max-h-72 overflow-hidden flex flex-col"
                       style={{
                         ...borderStyle,
                         background: 'linear-gradient(135deg, #1f2937, #111827)'
@@ -3097,7 +3135,7 @@ function CharacterBuilder() {
                           newSearches[slotIndex] = e.target.value;
                           setMoveSearches(newSearches);
                         }}
-                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-3 sm:py-2 text-base sm:text-sm font-black focus:outline-none"
+                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-1.5 text-sm font-black focus:outline-none"
                         style={{ textShadow: '1px 1px 0 #000' }}
                         autoFocus
                       />
@@ -3109,7 +3147,7 @@ function CharacterBuilder() {
                             setSelectedMoves(newMoves);
                             setOpenMoveSlot(null);
                           }}
-                          className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 active:bg-gray-500 text-gray-400"
+                          className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-600 text-gray-400"
                         >
                           {t.clearSlot}
                         </button>
@@ -3124,7 +3162,7 @@ function CharacterBuilder() {
                                 setSelectedMoves(newMoves);
                                 setOpenMoveSlot(null);
                               }}
-                              className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 active:bg-gray-500 flex items-center gap-2"
+                              className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-600 flex items-center gap-2"
                               style={{ textShadow: '1px 1px 0 #000' }}
                             >
                               <span className="text-xs px-1 rounded" style={{ 
@@ -3140,16 +3178,15 @@ function CharacterBuilder() {
                         })}
                       </div>
                     </div>
-                    </>
                   )}
                 </div>
               )})}
             </div>
 
-            {/* Click outside to close - hidden on mobile since we have backdrop */}
+            {/* Click outside to close */}
             {openMoveSlot !== null && (
               <div 
-                className="fixed inset-0 z-40 hidden sm:block" 
+                className="fixed inset-0 z-40" 
                 onClick={() => setOpenMoveSlot(null)}
               />
             )}
@@ -3179,19 +3216,25 @@ function CharacterBuilder() {
         )}
 
         {currentPage === 'capsules' && (
-          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-3 sm:p-6" style={borderStyle}>
-            <h2 className="text-xl sm:text-2xl font-black mb-4 sm:mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectCapsules}</h2>
+          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6" style={borderStyle}>
+            <h2 className="text-2xl font-black mb-6 text-center" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>{t.selectCapsules}</h2>
 
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 justify-center mb-4 sm:mb-6">
+            <div className="flex flex-wrap gap-4 justify-center mb-6">
               {[0, 1, 2, 3].map((slotIndex) => {
-                // Use memoized filter function
-                const filteredCapsules = getFilteredCapsules(capsuleSearches[slotIndex]);
+                const filteredCapsules = sampleCapsules.filter(capsule => {
+                  const capsuleTranslation = t.capsules_list[capsule.name] || { name: capsule.name, desc: capsule.description };
+                  return capsule.name.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
+                    capsuleTranslation.name.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
+                    capsule.category.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
+                    capsule.description.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase()) ||
+                    capsuleTranslation.desc.toLowerCase().includes(capsuleSearches[slotIndex].toLowerCase());
+                });
                 const isOpen = openCapsuleSlot === slotIndex;
                 return (
-                <div key={slotIndex} className="w-full sm:w-40 relative">
+                <div key={slotIndex} className="w-40 relative">
                   <button
                     onClick={() => setOpenCapsuleSlot(isOpen ? null : slotIndex)}
-                    className="w-full h-20 sm:h-24 rounded-lg p-2 font-black text-xs sm:text-sm cursor-pointer flex items-center justify-center text-center leading-tight"
+                    className="w-full h-24 rounded-lg p-2 font-black text-sm cursor-pointer flex items-center justify-center text-center"
                     style={{
                       ...smallBorderStyle,
                       background: selectedCapsules[slotIndex] 
@@ -3205,14 +3248,8 @@ function CharacterBuilder() {
                   </button>
                   
                   {isOpen && (
-                    <>
-                    {/* Mobile backdrop */}
                     <div 
-                      className="fixed inset-0 bg-black/50 z-40 sm:hidden"
-                      onClick={() => setOpenCapsuleSlot(null)}
-                    />
-                    <div
-                      className="fixed sm:absolute inset-x-2 sm:inset-x-auto top-1/4 sm:top-full left-auto sm:left-0 w-auto sm:w-64 mt-0 sm:mt-1 rounded-lg z-50 max-h-[60vh] sm:max-h-80 overflow-hidden flex flex-col"
+                      className="absolute top-full left-0 w-64 mt-1 rounded-lg z-50 max-h-80 overflow-hidden flex flex-col"
                       style={{
                         ...borderStyle,
                         background: 'linear-gradient(135deg, #1f2937, #111827)'
@@ -3227,11 +3264,11 @@ function CharacterBuilder() {
                           newSearches[slotIndex] = e.target.value;
                           setCapsuleSearches(newSearches);
                         }}
-                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-3 sm:py-2 text-base sm:text-sm font-black focus:outline-none"
+                        className="w-full bg-gray-700 border-b border-gray-600 px-3 py-1.5 text-sm font-black focus:outline-none"
                         style={{ textShadow: '1px 1px 0 #000' }}
                         autoFocus
                       />
-                      <div className="overflow-y-auto max-h-[50vh] sm:max-h-60">
+                      <div className="overflow-y-auto max-h-60">
                         <button
                           onClick={() => {
                             const newCapsules = [...selectedCapsules];
@@ -3239,7 +3276,7 @@ function CharacterBuilder() {
                             setSelectedCapsules(newCapsules);
                             setOpenCapsuleSlot(null);
                           }}
-                          className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 text-gray-400 active:bg-gray-500"
+                          className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-600 text-gray-400"
                         >
                           {t.clearSlot}
                         </button>
@@ -3254,7 +3291,7 @@ function CharacterBuilder() {
                                 setSelectedCapsules(newCapsules);
                                 setOpenCapsuleSlot(null);
                               }}
-                              className="w-full px-3 py-3 sm:py-2 text-left text-sm hover:bg-gray-600 active:bg-gray-500 flex items-center gap-2"
+                              className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-600 flex items-center gap-2"
                               style={{ textShadow: '1px 1px 0 #000' }}
                             >
                               <span className="text-xs px-1 rounded" style={{ 
@@ -3269,16 +3306,15 @@ function CharacterBuilder() {
                         })}
                       </div>
                     </div>
-                    </>
                   )}
                 </div>
               )})}
             </div>
 
-            {/* Click outside to close - hidden on mobile since we have backdrop */}
+            {/* Click outside to close */}
             {openCapsuleSlot !== null && (
               <div 
-                className="fixed inset-0 z-40 hidden sm:block" 
+                className="fixed inset-0 z-40" 
                 onClick={() => setOpenCapsuleSlot(null)}
               />
             )}
@@ -3286,9 +3322,9 @@ function CharacterBuilder() {
             <div className="space-y-3">
               {selectedCapsules.map((capsule, slotIndex) => (
                 capsule && (
-                  <div key={slotIndex} className="bg-gray-700 bg-opacity-60 rounded-lg p-3 sm:p-4" style={borderStyle}>
-                    <div className="flex justify-between items-center mb-2 sm:mb-3">
-                      <h3 className="text-base sm:text-lg font-black" style={{ textShadow: '1px 1px 0 #000' }}>{t.slot} {slotIndex + 1}: {t.capsules_list[capsule.name]?.name || capsule.name}</h3>
+                  <div key={slotIndex} className="bg-gray-700 bg-opacity-60 rounded-lg p-4" style={borderStyle}>
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-lg font-black" style={{ textShadow: '1px 1px 0 #000' }}>{t.slot} {slotIndex + 1}: {t.capsules_list[capsule.name]?.name || capsule.name}</h3>
                       <span className="text-xs px-2 py-1 rounded font-black" style={{ 
                         background: capsule.category === 'Active' ? '#3b82f6' : 
                                    capsule.category === 'Passive' ? '#10b981' : 
