@@ -1883,7 +1883,7 @@ function CharacterBuilder() {
   useEffect(() => {
     const applyZoom = () => {
       const screenWidth = window.innerWidth;
-      let zoomLevel = 0.7; // Default normal resolution: 70%
+      let zoomLevel = 1.0; // Default normal resolution: 100%
 
       // Determine zoom level based on screen width
       if (screenWidth >= 3440) {
@@ -1894,10 +1894,10 @@ function CharacterBuilder() {
         zoomLevel = 1.5;
       } else if (screenWidth >= 1920) {
         // Normal resolution (1920px)
-        zoomLevel = 0.7;
+        zoomLevel = 1.0;
       } else {
         // Smaller screens
-        zoomLevel = 0.7;
+        zoomLevel = 1.0;
       }
 
       // Apply zoom to document root
