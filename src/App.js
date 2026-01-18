@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Custom border styles
 const borderStyle = {
@@ -885,6 +886,7 @@ function CharacterBuilder() {
       backgroundAttachment: 'fixed',
       position: 'relative'
     }}>
+      <SpeedInsights />
       <div style={{
         position: 'absolute',
         top: 0,
